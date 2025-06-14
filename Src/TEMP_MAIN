@@ -1,0 +1,40 @@
+#include <stdint.h>
+
+// Define base addresses of GPIO and RCC registers
+#define RCC_BASE        0x40023800
+#define GPIOA_BASE      0x40020000
+
+// RCC registers
+#define RCC_AHB1ENR     (*(volatile uint32_t *)(RCC_BASE + 0x30))
+
+// GPIOA registers
+#define GPIOA_MODER     (*(volatile uint32_t *)(GPIOA_BASE + 0x00))
+#define GPIOA_ODR       (*(volatile uint32_t *)(GPIOA_BASE + 0x14))
+
+// Bit positions
+#define RCC_AHB1ENR_GPIOAEN    (1 << 0)  // Enable GPIOA clock
+#define GPIOA_MODER_PA5_OUTPUT (1 << 10) // Set PA5 as output
+
+// Delay function
+void delay(uint32_t count) {
+    for (volatile uint32_t i = 0; i < count; i++) {
+        __asm__("nop");
+    }
+}
+
+int main(void) {
+    // 1. Enable clock for GPIOA
+    RCC_AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
+
+    // 2. Set PA5 as output (MODER register, bits 11:10)
+    GPIOA_MODER &= ~(0x3 << 10); // Clear MODER[11:10]
+    GPIOA_MODER |= GPIOA_MODER_PA5_OUTPUT;
+
+    while (1) {
+        // 3. Toggle PA5 (LED on/off)
+        GPIOA_ODR ^= (1 << 5); // Toggle bit 5
+
+        // 4. Add a delay
+        delay(500000);
+    }
+}
